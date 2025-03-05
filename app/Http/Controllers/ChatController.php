@@ -250,5 +250,9 @@ class ChatController extends Controller {
         // $client = new Client();
 
     }
+
+    public function getToken(){
+        return response()->json(['status' => 200, 'data' => env('OCR_TOKEN')], 200);
+    }
     
 }
