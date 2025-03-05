@@ -22,5 +22,5 @@ use App\Http\Middleware\TokenValid;
 
 Route::controller(ChatController::class)->middleware(TokenValid::class)->group(function () {
     Route::post('/llamaocr', 'OCR');
-    Route::get('/getToken', 'getToken');
 });
+Route::get('/getToken', [ChatController::class, 'getToken'])->name('getToken');
