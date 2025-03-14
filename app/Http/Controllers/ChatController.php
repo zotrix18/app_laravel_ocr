@@ -11,14 +11,9 @@ class ChatController extends Controller {
         if(!$archivo){
             return response()->json(['error' => 'Debe adjuntar una imagen'], 400);
         }
-        $jsonResponse = (bool) $request->jsonResponse;
-        $peticion = '';
-        /*La respuesta y la exactitud de la misma depende del prompt que se le de*/
-        if($jsonResponse){
-            $peticion = 'Deberás actuar como un OCR, analizando el contenido legible que te envío. Responde en JSON estructurado y claro, sin comentarios adicionales. Dame absolutamente todo el texto contenido en la imagen, sin excepcion';
-        }else{
-            $peticion = 'Actuarás como un OCR, debes responder con el contenido legible que te estoy enviando en formato Markdown, de forma ordenada y concisa, sin comentarios adicionales. Dame absolutamente todo el texto contenido en la imagen, sin excepcion';
-        }
+ 
+        $peticion = 'Actuarás como un OCR, debes responder con el contenido legible que te estoy enviando en formato Markdown, de forma ordenada y concisa, sin comentarios adicionales. Necesito saber que RUC tiene el cliente, cuanto gasto y cuanto le cobraron de iva';
+     
 
         try {
             $mimeType = $archivo->getMimeType();
@@ -32,44 +27,34 @@ class ChatController extends Controller {
             if($isImage){
                 //Nuevo chatCompletion
                 $client = new Client([
-                    'base_uri' => 'https://oi.telco.com.ar/api/chat/completions',
-                    'headers' => [
-                        'Authorization' => 'Bearer ' . env('OCR_TOKEN'),
-                    ],
+                    'base_uri' => 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='. env('GOOGLE_API_KEY'),
+                    
                 ]);
-                $body = [
-                    'stream' => false, //No retorna un stream, es decir, solo hace una respuesta
-                    'model'  => 'llama3.2-vision:latest', //Por el momento, a menos que salga un modelo de vision mejor, debera usarse este
-                    'keep_alive' => 0,
-                    'messages' => [ //La estructura debe respetarse, aunque puede darse mas contexto antes para una mejor respuesta
+                $body = 
+                [
+                    "contents"=> [
                         [
-                            'role'    => 'system',
-                            'content' => 'Dame absolutamente todo el texto contenido en la imagen, sin excepcion',
-                        ],
-                        [
-                            'role'    => 'user',
-                            'content' => [
+                            "parts"=> [
                                 [
-                                    'type' => 'text',
-                                    'text' => $peticion,
+                                    "text"=> "Dame el ruc del cliente, fecha de factura, iva ( debes aclarar si es iva 5% o 10%, siempre aclara ambos) y total abonado en formato json.Ademas, añade un campo mas que se llame claridad, donde si la imagen es muy borrosa deberas dar un porcentaje en 0% a 100%, si no puedes leerlo, igualmente debes responder en json con ese campo cargado."
                                 ],
                                 [
-                                    'type'      => 'image_url',
-                                    'image_url' => [ //La imagen debe enviarse en base64 y con el mime type correspondiente
-                                        'url' => 'data:' . $archivo->getMimeType() . ';base64,' . base64_encode(file_get_contents($archivo->getRealPath()))
-                                    ],
-                                ],
-                            ],
-                        ],
-                    ],            
+                                    "inline_data"=> [
+                                        "mime_type"=> $archivo->getMimeType(),
+                                        "data"=> base64_encode(file_get_contents($archivo->getRealPath()))
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
                 ];
-                $response = $client->post('', [ //Envio en POST y como body la estructura del prompt
+                $response = $client->post('', [
                     'json' => $body,
                 ]);
 
-                $dataResponse = json_decode($response->getBody()->getContents(), true);
+                $dataResponse = json_decode($response->getBody()->getContents(), true);                               
 
-                return response()->json(['status' => 200, 'data' => $dataResponse], 200);                
+                return response()->json(['status' => 200, 'data' => ['body_usado' => $body, 'response_api' => $dataResponse["candidates"][0]["content"]["parts"][0]["text"]]], 200);                
             }
         } catch (\Throwable $th) {
             return response()->json(['status' => 500, 'data' => $th->getMessage()], 500);

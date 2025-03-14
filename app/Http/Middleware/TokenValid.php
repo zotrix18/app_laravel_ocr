@@ -15,7 +15,7 @@ class TokenValid
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if ($request->header('Authorization') !== 'Bearer ' . env('OCR_TOKEN')) {
+        if ($request->header('Authorization') !== 'Bearer ' . env('GOOGLE_API_KEY')) {
             return response()->json(['message' => 'Operación No autorizada'], 401);
         }
 
