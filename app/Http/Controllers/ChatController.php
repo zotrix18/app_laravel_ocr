@@ -8,6 +8,7 @@ class ChatController extends Controller {
 
     public function OCR(Request $request) {
         $archivo = $request->file('file');
+        $bodyInclude = (bool) $request->body;
         if(!$archivo){
             return response()->json(['error' => 'Debe adjuntar una imagen'], 400);
         }
@@ -53,8 +54,9 @@ class ChatController extends Controller {
                 ]);
 
                 $dataResponse = json_decode($response->getBody()->getContents(), true);                               
-
-                return response()->json(['status' => 200, 'data' => ['body_usado' => $body, 'response_api' => $dataResponse["candidates"][0]["content"]["parts"][0]["text"]]], 200);                
+                $jsonResp = ['status' => 200, 'data' => ['response_api' => $dataResponse["candidates"][0]["content"]["parts"][0]["text"]]];
+                if($bodyInclude) $jsonResp['data']['body_usado'] = $body;                                
+                return response()->json($jsonResp, 200);                
             }
         } catch (\Throwable $th) {
             return response()->json(['status' => 500, 'data' => $th->getMessage()], 500);
