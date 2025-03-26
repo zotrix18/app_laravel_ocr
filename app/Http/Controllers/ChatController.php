@@ -9,6 +9,7 @@ class ChatController extends Controller {
     public function OCR(Request $request) {
         $archivo = $request->file('file');
         $prompt = $request->prompt ?? "Dame el ruc del cliente, fecha de factura, iva ( debes aclarar si es iva 5% o 10%, siempre aclara ambos) y total abonado en formato json.Ademas, añade un campo mas que se llame claridad, donde si la imagen es muy borrosa deberas dar un porcentaje en 0% a 100%, si no puedes leerlo, igualmente debes responder en json con ese campo cargado en null. Si algun campo es nulo, claridad sera 0%";
+        $model = $request->model ?? 'gemini-1.5-flash';
         $bodyInclude = (bool) $request->body;
         if(!$archivo){
             return response()->json(['error' => 'Debe adjuntar una imagen'], 400);
@@ -29,7 +30,7 @@ class ChatController extends Controller {
             if($isImage){
                 //Nuevo chatCompletion
                 $client = new Client([
-                    'base_uri' => 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='. env('GOOGLE_API_KEY'),
+                    'base_uri' => 'https://generativelanguage.googleapis.com/v1beta/models/'. $model .':generateContent?key='. env('GOOGLE_API_KEY'),
                     
                 ]);
                 $body = 
