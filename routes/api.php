@@ -24,6 +24,7 @@ Route::controller(ChatController::class)->middleware(TokenValid::class)->group(f
     Route::post('/ocr', 'OCR');
     Route::post('/chatDoco', 'consultaDoCo');
     Route::post('/consulta', 'consulta')->name('consulta');
+    Route::post('/cargarFile', 'cargarFile')->name('uploadFile');
 });
 
 Route::get('/getToken', [ChatController::class, 'getToken'])->name('getToken');
